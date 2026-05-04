@@ -14,7 +14,7 @@
   },
   "name": "student-performance-analytics-system2",
   "version": "1.0.0",
-  "homepage": "https://souraj-droid.github.io/STUDENT-PERFORMANCE-ANALYSIS-FRONTEND/",
+  "homepage": "https://Hima-12318.github.io/project-1-frontend-/",
   "main": "postcss.config.js",
   "scripts": {
     "start": "react-scripts start",
