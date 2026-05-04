@@ -1,0 +1,334 @@
+import React, { useState } from 'react';
+import { UserPlus, Save, RotateCcw } from 'lucide-react';
+import { createStudent } from '../services/api';
+
+const AddStudent = ({ token }) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    studentId: '',
+    department: '',
+    email: '',
+    admissionYear: new Date().getFullYear(),
+    semester: 'Fall'
+  });
+
+  const [errors, setErrors] = useState({});
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // First name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    } else if (formData.firstName.trim().length > 50) {
+      newErrors.firstName = 'First name must not exceed 50 characters';
+    }
+    
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
+    } else if (formData.lastName.trim().length > 50) {
+      newErrors.lastName = 'Last name must not exceed 50 characters';
+    }
+    
+    // Student ID validation
+    if (!formData.studentId.trim()) {
+      newErrors.studentId = 'Student ID is required';
+    } else if (formData.studentId.trim().length < 3) {
+      newErrors.studentId = 'Student ID must be at least 3 characters';
+    } else if (formData.studentId.trim().length > 20) {
+      newErrors.studentId = 'Student ID must not exceed 20 characters';
+    } else if (!/^[a-zA-Z0-9-]+$/.test(formData.studentId.trim())) {
+      newErrors.studentId = 'Student ID can only contain letters, numbers, and hyphens';
+    }
+    
+    // Department validation
+    if (!formData.department.trim()) {
+      newErrors.department = 'Department is required';
+    } else if (formData.department.trim().length < 2) {
+      newErrors.department = 'Department must be at least 2 characters';
+    }
+    
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Admission year validation
+    if (!formData.admissionYear) {
+      newErrors.admissionYear = 'Admission year is required';
+    } else if (formData.admissionYear < 2000 || formData.admissionYear > 2100) {
+      newErrors.admissionYear = 'Admission year must be between 2000 and 2100';
+    }
+    
+    // Semester validation
+    if (!formData.semester.trim()) {
+      newErrors.semester = 'Semester is required';
+    }
+    
+    return newErrors;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const formErrors = validateForm();
+    
+    if (Object.keys(formErrors).length === 0) {
+      setLoading(true);
+      try {
+        const result = await createStudent(token, formData);
+        if (result) {
+          setShowSuccess(true);
+          setTimeout(() => {
+            handleReset();
+            setShowSuccess(false);
+          }, 2000);
+        } else {
+          setErrors({ submit: 'Failed to create student. Please try again.' });
+        }
+      } catch (error) {
+        console.error('Error creating student:', error);
+        setErrors({ submit: 'Failed to create student. Please try again.' });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setErrors(formErrors);
+    }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      studentId: '',
+      department: '',
+      email: '',
+      admissionYear: new Date().getFullYear(),
+      semester: 'Fall'
+    });
+    setErrors({});
+  };
+
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Page Title */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Add Student</h1>
+        <p className="text-gray-600 mt-2">Enter student information and academic details</p>
+      </div>
+
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          <p className="font-medium">✓ Student created successfully!</p>
+        </div>
+      )}
+
+      {errors.submit && (
+        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <p className="font-medium">{errors.submit}</p>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Details Section */}
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="mr-2">👤</span> Student Details
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.firstName ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter first name"
+                />
+                {errors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.lastName ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter last name"
+                />
+                {errors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Student ID *
+                </label>
+                <input
+                  type="text"
+                  name="studentId"
+                  value={formData.studentId}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.studentId ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter student ID (e.g., STU003)"
+                />
+                {errors.studentId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.studentId}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter email"
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Department *
+                </label>
+                <input
+                  type="text"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.department ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter department"
+                />
+                {errors.department && (
+                  <p className="text-red-500 text-xs mt-1">{errors.department}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Admission Year *
+                </label>
+                <input
+                  type="number"
+                  name="admissionYear"
+                  value={formData.admissionYear}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.admissionYear ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter admission year"
+                />
+                {errors.admissionYear && (
+                  <p className="text-red-500 text-xs mt-1">{errors.admissionYear}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Semester *
+                </label>
+                <select
+                  name="semester"
+                  value={formData.semester}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.semester ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select semester</option>
+                  <option value="Fall">Fall</option>
+                  <option value="Spring">Spring</option>
+                  <option value="Summer">Summer</option>
+                  <option value="Winter">Winter</option>
+                </select>
+                {errors.semester && (
+                  <p className="text-red-500 text-xs mt-1">{errors.semester}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={loading}
+              className="flex items-center px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Creating...' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddStudent;
